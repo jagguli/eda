@@ -171,7 +171,7 @@ handle_call({send_frame, #{?FrameOPCode := ?OPCHeartbeat}=Frame}, _From,
             #state{gateway_pid=GatewayPid, ws_status=online,
                    ws_seq_nr=SequenceNumber, name=Name}=State) ->
     UpdatedFrame = maps:put(?FrameEventData, SequenceNumber, Frame),
-    Payload = {text, jiffy:encode(UpdatedFrame)},
+    Payload = {text, jsx:encode(UpdatedFrame)},
     gun:ws_send(GatewayPid, Payload),
     lager:debug("[~p]: Sending Payload(~p)", [Name, Payload]),
     {reply, ok, State};
@@ -180,7 +180,7 @@ handle_call({send_frame, Frame}, _From,
                    name=Name}=State) ->
     %% TODO: Payload and Frame variable naming should be changed because
     %% Frame is actually the Discord payload and the payload is the Frame
-    Payload = {text, jiffy:encode(Frame)},
+    Payload = {text, jsx:encode(Frame)},
     gun:ws_send(GatewayPid, Payload),
     lager:debug("[~p]: Sending Payload(~p)", [Name, Payload]),
     {reply, ok, State};
@@ -293,7 +293,7 @@ handle_info({gun_ws_upgrade, _ConnPid, ok, _Headers}=Msg,
 
 handle_info({gun_ws, GatewayPid, {text, JsonFrame}},
             #state{gateway_pid=GatewayPid, name=Name}=State) ->
-    case jiffy:decode(JsonFrame, [return_maps]) of
+    case jsx:decode(JsonFrame, [return_maps]) of
         #{?FrameSequenceNumber := null}=Frame ->
             lager:debug("[~p]: Frame received from GatewayPid(~p):~n~p~n",
                         [Name, GatewayPid, Frame]),
